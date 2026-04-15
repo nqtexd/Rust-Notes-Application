@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Note Application</title>
+        <style>
+            body {
+                background-color: rgb(42, 42, 42);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0;
+                padding: 20px;
+            }
+            #bar {
+                padding: 15px 25px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background-color: #1a1a1a;
+                border-radius: 12px;
+                margin-bottom: 30px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            }
+
+            #bar h2 { color: white; margin: 0; }
+
+            #btn {
+                background-color: #00ff88;
+                border: none;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                font-size: 24px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+
+            #btn:hover { transform: scale(1.1); }
+            #content {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+                padding: 10px;
+            }
+            .note-card {
+                background: #ffffff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                color: #333;
+                min-height: 100px;
+                word-wrap: break-word;
+                white-space: pre-wrap; 
+                border-left: 5px solid #00ff88;
+            }
+            #box {
+                visibility: hidden;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                position: fixed;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(4px);
+                z-index: 1000;
+            }
+            #innerBox {
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                width: 350px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            }
+
+            #inp {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            #txtarea {
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                outline: none;
+                font-size: 16px;
+                font-family: inherit;
+                resize: none;
+                overflow: hidden;
+            }
+
+            #inp input[type="submit"] {
+                background: #2a2a2a;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+            #inp input[type="submit"]:hover {
+                background: #444;
+            }
+
+        </style>
+    </head>
+    <body>
+
+        <div id="bar">
+            <h2>My Notes</h2>
+            <button id="btn">+</button>
+        </div>
+        <div id="content"></div>
+        <div id="box">
+            <div id="innerBox">
+                <form id="inp">
+                    <h3 style="margin-top:0">Add New Note</h3>
+                    <textarea name="content" id="txtarea" placeholder="Write something..." required></textarea>
+                    <input type="submit" value="Save Note">
+                </form>
+            </div>
+        </div>
+        <script>
+            let button = document.getElementById("btn");
+            let cont = document.getElementById("content");
+            let tarea = document.getElementById("txtarea");
+            tarea.addEventListener("input", function() {
+                this.style.height = "auto"; //auto adjust height
+                this.style.height = this.scrollHeight + "px";
+            });
+
+            button.addEventListener("click", () => {
+                document.getElementById("box").style.visibility = "visible";
+                tarea.focus();
+            });
+
+            async function render() {
+                const res = await fetch("/api/list");
+                const data = await res.json();
+                cont.innerHTML = "";
+                if (!data || data.length === 0) {
+                    cont.innerHTML = "<p style='grid-column: 1/-1;'>No Notes Yet...!</p>";
+                    cont.style.textAlign = "center";
+                    cont.style.color = "white";
+                    cont.style.fontWeight = "bold";
+                    cont.style.fontSize = "20px";
+                } else {
+                    data.forEach(note => {
+                        const card = document.createElement("div");
+                        card.className = "note-card";
+                        card.textContent = note.content;
+                        cont.appendChild(card);
+                    });
+                }
+            }
+            document.getElementById("inp").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                let content = tarea.value;
+                await fetch("/api/add", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({id: Date.now(), content: content})
+                });
+                tarea.value = "";
+                tarea.style.height = "auto";//SHOULDVEE RESET THE DAMN HEIGHT
+                document.getElementById("box").style.visibility = "hidden"; 
+                render();
+            });
+
+            window.onclick = (e) => {
+                if (e.target == document.getElementById("box")) {
+                    document.getElementById("box").style.visibility = "hidden";
+                }
+            }
+            render();
+        </script>
+    </body>
+</html>
