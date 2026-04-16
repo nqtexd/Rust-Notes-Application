@@ -62,7 +62,7 @@ webserver/
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/webserver.git
+git clone https://github.com/nqtexd/Rust-Notes-Application.git
 cd webserver
 
 # Build and run
